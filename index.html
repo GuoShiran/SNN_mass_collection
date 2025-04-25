@@ -147,11 +147,6 @@
             background-color: #0056b3;
             transform: translateY(-2px);
         }
-        #statusContainer {
-            margin-top: 20px;
-            color: #555;
-            font-size: 0.9em;
-        }
         #loadingProgress {
             margin-top: 10px;
             font-size: 0.9em;
@@ -217,7 +212,6 @@
                 </div>
             </div>
         </div>
-        <p id="statusContainer"></p>
         <p id="loadingProgress"></p>
     </div>
 
@@ -228,7 +222,7 @@
     </div>
 
     <script>
-        let emailInput, welcomePage, mainPage, completionPage, frameDisplay, inputPrompt, statusContainer, loadingProgress, mainTitle, rulesTitle, rulesList, promptText, completionTitle, completionMessage;
+        let emailInput, welcomePage, mainPage, completionPage, frameDisplay, inputPrompt, loadingProgress, mainTitle, rulesTitle, rulesList, promptText, completionTitle, completionMessage;
 
         let modules = [];
         let selectedModules = [];
@@ -237,6 +231,8 @@
         let collectedData = [];
         let userEmail = '';
         let language = 'zh'; // Default language
+        let isLoadingComplete = false; // 标记加载是否完成
+        let loadedModulesCount = 0; // 已加载的模块数量
 
         const MODULE_COUNT = 101;
         const SELECTED_MODULE_COUNT = 30;
@@ -250,12 +246,10 @@
                 rulesTitle: '规则说明',
                 rules: [
                     '屏幕上将按顺序展示不同数字的书写过程，请判断正在书写什么数字并点击对应按钮。<strong>如信息不足无法判断请选n以展示下一步书写画面</strong>',
-                    '数字可能以<strong>任何角度、任何大小</strong>书写，甚至上下颠倒',
-                    '请在<strong>有足够把握时</strong>再进行判断',
-                    '如发现任何数字有书写、显示等问题，请下拉页面记录当前<strong>模块数与时间</strong>并发送至<a href="mailto:sguoau@connect.ust.hk">sguoau@connect.ust.hk</a>'
+                    '数字可能以<strong>任何角度、任何大小</strong>书写，甚至上下倒',
+                    '请在<strong>有足够把握时</strong>再进行判断'
                 ],
                 promptText: '请选择你的判断结果：',
-                statusLabel: '状态：',
                 loadingImages: '加载图片中...',
                 loadingModules: (modules) => `加载模块 ${modules.join(', ')}...`,
                 firstModuleLoaded: '第一个模块加载完成，开始展示',
@@ -263,13 +257,14 @@
                 allModulesLoaded: '所有模块加载完成',
                 moduleProgress: (progress, loaded, total) => `加载进度：${progress}% (${loaded}/${total} 模块)`,
                 moduleFailed: (moduleNum) => `模块 ${moduleNum} 加载失败，帧数为 0`,
-                frameStatus: (module, frame, total) => `模块 ${module}，帧 ${frame}/${total}`,
                 allModulesDone: '所有模块已展示，数据已收集',
                 dataRecorded: (time, input) => `已记录：时间=${time}s, 选择=${input}`,
                 errorIndex: '错误：模块索引超出范围',
                 errorModule: '错误：当前模块未加载',
                 errorFrame: '错误：帧数据无效',
                 alertNoEmail: '请输入您的邮箱！',
+                invalidInput: '无效输入，请仔细阅读规则并重新判断！',
+                loadingPrompt: '加载中，请稍候...',
                 completionTitle: '实验完成',
                 completionMessage: (email) => `您已完成该实验，感谢参与<br>您的邮箱是：${email}<br>请将本页面截屏与您的收款信息（如微信/银行收款码）发至<a href="mailto:sguoau@connect.ust.hk">sguoau@connect.ust.hk</a>以便后续支付薪酬`
             },
@@ -279,11 +274,9 @@
                 rules: [
                     'The screen will display the writing process of different digits in sequence. Please identify the digit being written and click the corresponding button. <strong>If there is insufficient information to judge, select "n" to show the next writing frame.</strong>',
                     'Digits may be written at <strong>any angle or size</strong>, and may even be upside down.',
-                    'Please make a judgment only when you are <strong>sufficiently confident</strong>.',
-                    'If you encounter any issues with writing or display, please scroll down to record the current <strong>module number and time</strong> and send them to <a href="mailto:sguoau@connect.ust.hk">sguoau@connect.ust.hk</a>.'
+                    'Please make a judgment only when you are <strong>sufficiently confident</strong>.'
                 ],
                 promptText: 'Please select your judgment result:',
-                statusLabel: 'Status:',
                 loadingImages: 'Loading images...',
                 loadingModules: (modules) => `Loading modules ${modules.join(', ')}...`,
                 firstModuleLoaded: 'First module loaded, starting display',
@@ -291,13 +284,14 @@
                 allModulesLoaded: 'All modules loaded',
                 moduleProgress: (progress, loaded, total) => `Loading progress: ${progress}% (${loaded}/${total} modules)`,
                 moduleFailed: (moduleNum) => `Module ${moduleNum} failed to load, frame count is 0`,
-                frameStatus: (module, frame, total) => `Module ${module}, Frame ${frame}/${total}`,
                 allModulesDone: 'All modules displayed, data collected',
                 dataRecorded: (time, input) => `Recorded: Time=${time}s, Selection=${input}`,
                 errorIndex: 'Error: Module index out of range',
                 errorModule: 'Error: Current module not loaded',
                 errorFrame: 'Error: Frame data invalid',
                 alertNoEmail: 'Please enter your email!',
+                invalidInput: 'Invalid input, please read the rules carefully and try again!',
+                loadingPrompt: 'Loading, please wait...',
                 completionTitle: 'Experiment Completed',
                 completionMessage: (email) => `You have completed the experiment, thank you for your participation.<br>Your email is: ${email}<br>Please take a screenshot of this page and send it along with your payment information (e.g., WeChat/bank payment code) to <a href="mailto:sguoau@connect.ust.hk">sguoau@connect.ust.hk</a> for subsequent compensation.`
             }
@@ -310,7 +304,6 @@
             completionPage = document.getElementById('completionPage');
             frameDisplay = document.getElementById('frameDisplay');
             inputPrompt = document.getElementById('inputPrompt');
-            statusContainer = document.getElementById('statusContainer');
             loadingProgress = document.getElementById('loadingProgress');
             mainTitle = document.getElementById('mainTitle');
             rulesTitle = document.getElementById('rulesTitle');
@@ -326,7 +319,7 @@
             rulesTitle.textContent = t.rulesTitle;
             rulesList.innerHTML = t.rules.map(rule => `<li>${rule}</li>`).join('');
             promptText.textContent = t.promptText;
-            statusContainer.innerHTML = `${t.statusLabel}<span id="status">${t.loadingImages}</span>`;
+            loadingProgress.textContent = t.loadingImages;
         }
 
         function updateCompletionPageContent() {
@@ -379,7 +372,7 @@
                         module: moduleNum
                     });
                     console.log(`Loaded frame: ${frameUrl}`);
-                    consecutiveFailures = 0; // 重置连续失败计数
+                    consecutiveFailures = 0;
                 } else {
                     failedFrames.push(frameUrl);
                     consecutiveFailures++;
@@ -406,7 +399,7 @@
             console.log('Selected modules:', selectedModules);
             preloadStatus.textContent = translations[language].loadingModules(selectedModules);
 
-            let loadedModules = 0;
+            loadedModulesCount = 0;
             const totalModules = selectedModules.length;
             const failedModules = [];
 
@@ -414,12 +407,18 @@
                 const frames = await loadModuleFrames(moduleNum);
                 if (frames.length > 0) {
                     modules.push(frames);
-                    loadedModules++;
-                    preloadStatus.textContent = translations[language].moduleProgress(
-                        Math.round((loadedModules / totalModules) * 100),
-                        loadedModules,
-                        totalModules
-                    );
+                    loadedModulesCount++;
+                    // 更新加载进度
+                    const progress = Math.round((loadedModulesCount / totalModules) * 100);
+                    preloadStatus.textContent = translations[language].moduleProgress(progress, loadedModulesCount, totalModules);
+                    // 如果实验页面已显示，实时更新加载进度
+                    if (mainPage.style.display === 'block') {
+                        loadingProgress.textContent = translations[language].moduleProgress(progress, loadedModulesCount, totalModules);
+                        // 如果这是第一个加载成功的模块，尝试展示
+                        if (loadedModulesCount === 1 && currentModuleIndex === 0) {
+                            showNextFrame();
+                        }
+                    }
                 } else {
                     failedModules.push(moduleNum);
                     console.warn(`Module ${moduleNum} failed to load any frames`);
@@ -428,17 +427,31 @@
 
             if (modules.length === 0) {
                 preloadStatus.textContent = `${translations[language].firstModuleFailed} Failed modules: ${failedModules.join(', ')}. Contact support: sguoau@connect.ust.hk`;
-                return;
+                if (mainPage.style.display === 'block') {
+                    loadingProgress.textContent = `${translations[language].firstModuleFailed} Contact support: sguoau@connect.ust.hk`;
+                }
+            } else {
+                isLoadingComplete = true;
+                preloadStatus.textContent = translations[language].allModulesLoaded;
+                if (mainPage.style.display === 'block') {
+                    loadingProgress.textContent = translations[language].allModulesLoaded;
+                }
             }
 
             console.log('Loaded modules:', modules);
-            preloadStatus.textContent = translations[language].allModulesLoaded;
         }
 
         function showNextFrame() {
-            const status = document.getElementById('status');
-            if (currentModuleIndex >= modules.length) {
-                status.textContent = translations[language].allModulesDone;
+            if (currentModuleIndex >= modules.length && !isLoadingComplete) {
+                // 模块还未加载完成，显示加载提示
+                frameDisplay.src = '';
+                inputPrompt.style.display = 'none';
+                loadingProgress.textContent = translations[language].loadingPrompt;
+                return;
+            }
+
+            if (currentModuleIndex >= modules.length && isLoadingComplete) {
+                // 所有模块已展示，进入完成页面
                 console.log('Collected data:', collectedData);
                 mainPage.style.display = 'none';
                 completionPage.style.display = 'block';
@@ -448,10 +461,10 @@
 
             const currentModule = modules[currentModuleIndex];
             if (!currentModule || currentModule.length === 0) {
-                console.warn(`Module ${selectedModules[currentModuleIndex]} is empty, skipping`);
-                currentModuleIndex++;
-                currentFrameIndex = 0;
-                showNextFrame();
+                // 当前模块还未加载，显示加载提示
+                frameDisplay.src = '';
+                inputPrompt.style.display = 'none';
+                loadingProgress.textContent = translations[language].loadingPrompt;
                 return;
             }
 
@@ -465,7 +478,16 @@
             const frame = currentModule[currentFrameIndex];
             frameDisplay.src = frame.url;
             inputPrompt.style.display = 'block';
-            status.textContent = translations[language].frameStatus(frame.module, currentFrameIndex + 1, currentModule.length);
+            // 确保加载进度显示最新状态
+            if (!isLoadingComplete) {
+                loadingProgress.textContent = translations[language].moduleProgress(
+                    Math.round((loadedModulesCount / SELECTED_MODULE_COUNT) * 100),
+                    loadedModulesCount,
+                    SELECTED_MODULE_COUNT
+                );
+            } else {
+                loadingProgress.textContent = translations[language].allModulesLoaded;
+            }
         }
 
         async function sendToGoogleSheets(data) {
@@ -496,14 +518,14 @@
 
             if (currentModuleIndex >= modules.length || currentModuleIndex < 0) {
                 console.error('Module index out of range:', currentModuleIndex);
-                document.getElementById('status').textContent = translations[language].errorIndex;
+                alert(translations[language].errorIndex);
                 return;
             }
 
             const currentModule = modules[currentModuleIndex];
             if (!currentModule) {
                 console.error('Current module not loaded:', currentModuleIndex);
-                document.getElementById('status').textContent = translations[language].errorModule;
+                alert(translations[language].errorModule);
                 return;
             }
 
@@ -518,7 +540,12 @@
             const frame = currentModule[currentFrameIndex];
             if (!frame) {
                 console.error('Invalid frame data:', frame);
-                document.getElementById('status').textContent = translations[language].errorFrame;
+                alert(translations[language].errorFrame);
+                return;
+            }
+
+            if (currentFrameIndex === 0 && value !== 'n') {
+                alert(translations[language].invalidInput);
                 return;
             }
 
@@ -531,7 +558,7 @@
             };
             console.log('Data to send:', data);
             collectedData.push(data);
-            document.getElementById('status').textContent = translations[language].dataRecorded(data.videoTime, data.userInput);
+            console.log(translations[language].dataRecorded(data.videoTime, data.userInput));
 
             sendToGoogleSheets(data);
 
@@ -552,14 +579,11 @@
                 }
                 language = lang;
                 console.log('User email:', userEmail, 'Selected language:', language);
+
                 welcomePage.style.display = 'none';
                 mainPage.style.display = 'block';
                 updateMainPageContent();
-                if (modules.length > 0) {
-                    showNextFrame();
-                } else {
-                    document.getElementById('status').textContent = `${translations[language].firstModuleFailed} Contact support: sguoau@connect.ust.hk`;
-                }
+                showNextFrame();
             } catch (error) {
                 console.error('Error in startExperiment:', error);
                 alert('发生错误，请检查控制台日志并联系支持团队：sguoau@connect.ust.hk');
