@@ -167,6 +167,11 @@
             font-size: 1.2em;
             margin: 20px 0;
         }
+        #preloadStatus {
+            color: #777;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -180,6 +185,7 @@
             <button class="langButton" onclick="startExperiment('zh')">中文 (简体)</button>
             <button class="langButton" onclick="startExperiment('en')">English</button>
         </div>
+        <p id="preloadStatus"></p>
     </div>
 
     <!-- Main Page -->
@@ -226,7 +232,7 @@
         const completionPage = document.getElementById('completionPage');
         const emailInput = document.getElementById('emailInput');
         const frameDisplay = document.getElementById('frameDisplay');
-        const inputPrompt = document.getElementById('inputPrompt');
+        const inputPrompt = document.getElement혁='inputPrompt');
         const statusContainer = document.getElementById('statusContainer');
         const loadingProgress = document.getElementById('loadingProgress');
         const mainTitle = document.getElementById('mainTitle');
@@ -247,7 +253,7 @@
         const MODULE_COUNT = 101;
         const SELECTED_MODULE_COUNT = 30;
         const FRAME_INTERVAL = 20;
-        const BASE_URL = 'https://raw.githubusercontent.com/guoshiran/SNN_screenshot/data/';
+        const BASE_URL = 'https://raw.githubusercontent.com/guoshiran/SNN_mass_collection/data/';
         const GOOGLE_FORM_URL = 'https://docs.google.com/forms/u/0/d/e/1FAIpQLSfusBxX1cNbsastoKk1CwRMNt6lNvZ2290zl2XQe0zBWP1wQQ/formResponse';
 
         const translations = {
@@ -348,8 +354,9 @@
             const frames = [];
             let frameIndex = 1;
             let attemptIndex = 1;
+            const maxAttempts = 1000;
 
-            while (true) {
+            while (attemptIndex <= maxAttempts) {
                 const frameUrl = `${BASE_URL}module_${moduleNum}/module_${moduleNum}_frame_${attemptIndex}.png`;
                 const img = new Image();
                 img.src = frameUrl;
@@ -359,71 +366,61 @@
                     img.onerror = () => resolve(false);
                 });
 
-                if (!loaded) {
-                    attemptIndex++;
-                    if (attemptIndex > 1000) break; // Prevent infinite loop
-                    continue;
+                if (loaded) {
+                    const moduleValue = extractModuleNumber(frameUrl);
+                    frames.push({
+                        url: frameUrl,
+                        time: ((frameIndex - 1) * FRAME_INTERVAL) / 1000,
+                        module: moduleValue
+                    });
+                    frameIndex++;
+                    console.log(`Loaded frame: ${frameUrl}`);
+                } else {
+                    console.warn(`Frame not found: ${frameUrl}`);
                 }
-
-                const moduleValue = extractModuleNumber(frameUrl);
-                frames.push({
-                    url: frameUrl,
-                    time: ((frameIndex - 1) * FRAME_INTERVAL) / 1000,
-                    module: moduleValue
-                });
-                frameIndex++;
                 attemptIndex++;
             }
-            console.log(`Module ${moduleNum} loaded, frame count: ${frames.length}`);
+
+            if (frames.length === 0) {
+                console.error(`Module ${moduleNum} has no valid frames`);
+            } else {
+                console.log(`Module ${moduleNum} loaded, frame count: ${frames.length}`);
+            }
             return frames;
         }
 
-        async function loadFrames() {
+        async function preloadFrames() {
+            const preloadStatus = document.getElementById('preloadStatus');
             selectedModules = shuffleModules();
-            const status = document.getElementById('status');
-            status.textContent = translations[language].loadingModules(selectedModules);
+            preloadStatus.textContent = translations[language].loadingModules(selectedModules);
 
-            const firstModuleNum = selectedModules[0];
-            const firstModuleFrames = await loadModuleFrames(firstModuleNum);
-            if (firstModuleFrames.length > 0) {
-                modules.push(firstModuleFrames);
-                status.textContent = translations[language].firstModuleLoaded;
-                showNextFrame();
-            } else {
-                status.textContent = translations[language].firstModuleFailed;
-                return;
-            }
-
-            const remainingModules = selectedModules.slice(1);
-            let loadedModules = 1;
+            let loadedModules = 0;
             const totalModules = selectedModules.length;
 
-            const loadRemaining = remainingModules.map(async (moduleNum) => {
+            for (const moduleNum of selectedModules) {
                 const frames = await loadModuleFrames(moduleNum);
                 if (frames.length > 0) {
                     modules.push(frames);
                     loadedModules++;
                     const progress = Math.round((loadedModules / totalModules) * 100);
-                    loadingProgress.textContent = translations[language].moduleProgress(progress, loadedModules, totalModules);
+                    preloadStatus.textContent = translations[language].moduleProgress(progress, loadedModules, totalModules);
                 } else {
                     console.warn(translations[language].moduleFailed(moduleNum));
+                    preloadStatus.textContent = translations[language].moduleFailed(moduleNum);
                 }
-            });
-
-            await Promise.all(loadRemaining);
+            }
 
             if (modules.length === 0) {
-                status.textContent = translations[language].firstModuleFailed;
+                preloadStatus.textContent = `${translations[language].firstModuleFailed} 请联系支持团队：sguoau@connect.ust.hk`;
                 return;
             }
 
-            console.log(`Total modules loaded: ${modules.length}`);
-            loadingProgress.textContent = translations[language].allModulesLoaded;
+            console.log(`Total modules preloaded: ${modules.length}`);
+            preloadStatus.textContent = translations[language].allModulesLoaded;
         }
 
         function showNextFrame() {
             const status = document.getElementById('status');
-            console.log(`Current module index: ${currentModuleIndex}, Total modules: ${modules.length}`);
             if (currentModuleIndex >= modules.length) {
                 status.textContent = translations[language].allModulesDone;
                 console.log('Collected data:', collectedData);
@@ -434,8 +431,15 @@
             }
 
             const currentModule = modules[currentModuleIndex];
-            console.log(`Current module frame count: ${currentModule ? currentModule.length : 'undefined'}, Current frame index: ${currentFrameIndex}`);
-            if (!currentModule || currentFrameIndex >= currentModule.length) {
+            if (!currentModule || currentModule.length === 0) {
+                console.warn(`Module ${selectedModules[currentModuleIndex]} is empty, skipping`);
+                currentModuleIndex++;
+                currentFrameIndex = 0;
+                showNextFrame();
+                return;
+            }
+
+            if (currentFrameIndex >= currentModule.length) {
                 currentModuleIndex++;
                 currentFrameIndex = 0;
                 showNextFrame();
@@ -534,6 +538,16 @@
             welcomePage.style.display = 'none';
             mainPage.style.display = 'block';
             updateMainPageContent();
-            loadFrames();
+            if (modules.length > 0) {
+                showNextFrame();
+            } else {
+                document.getElementById('status').textContent = `${translations[language].firstModuleFailed} 请联系支持团队：sguoau@connect.ust.hk`;
+            }
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            preloadFrames();
+        });
     </script>
+</body>
+</html>
