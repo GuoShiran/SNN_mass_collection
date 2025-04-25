@@ -64,6 +64,7 @@
             border-radius: 6px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             transition: transform 0.1s ease, background-color 0.3s ease;
+            pointer-events: auto; /* 确保按钮可点击 */
         }
         .langButton:hover {
             background-color: #0056b3;
@@ -230,9 +231,9 @@
         const welcomePage = document.getElementById('welcomePage');
         const mainPage = document.getElementById('mainPage');
         const completionPage = document.getElementById('completionPage');
-        const emailInput = document.getElementById('emailInput');
+        const emailInput = document.get_ElementById('emailInput');
         const frameDisplay = document.getElementById('frameDisplay');
-        const inputPrompt = document.getElement혁='inputPrompt');
+        const inputPrompt = document.getElementById('inputPrompt');
         const statusContainer = document.getElementById('statusContainer');
         const loadingProgress = document.getElementById('loadingProgress');
         const mainTitle = document.getElementById('mainTitle');
@@ -528,20 +529,25 @@
         }
 
         function startExperiment(lang) {
-            userEmail = emailInput.value.trim();
-            if (!userEmail) {
-                alert(translations[language].alertNoEmail);
-                return;
-            }
-            language = lang;
-            console.log('User email:', userEmail, 'Selected language:', language);
-            welcomePage.style.display = 'none';
-            mainPage.style.display = 'block';
-            updateMainPageContent();
-            if (modules.length > 0) {
-                showNextFrame();
-            } else {
-                document.getElementById('status').textContent = `${translations[language].firstModuleFailed} 请联系支持团队：sguoau@connect.ust.hk`;
+            try {
+                userEmail = emailInput.value.trim();
+                if (!userEmail) {
+                    alert(translations[language].alertNoEmail);
+                    return;
+                }
+                language = lang; // 修复：确保 lang 是函数参数
+                console.log('User email:', userEmail, 'Selected language:', language);
+                welcomePage.style.display = 'none';
+                mainPage.style.display = 'block';
+                updateMainPageContent();
+                if (modules.length > 0) {
+                    showNextFrame();
+                } else {
+                    document.getElementById('status').textContent = `${translations[language].firstModuleFailed} 请联系支持团队：sguoau@connect.ust.hk`;
+                }
+            } catch (error) {
+                console.error('Error in startExperiment:', error);
+                alert('发生错误，请检查控制台日志并联系支持团队：sguoau@connect.ust.hk');
             }
         }
 
