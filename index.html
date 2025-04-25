@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNN Mass Collection | SNN大规模数据收集</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #f5f7fa;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            font-size: 2em;
+            font-weight: 600;
+            margin: 30px 0;
+        }
+        #welcomePage {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+        }
+        #welcomePage p {
+            color: #555;
+            font-size: 1em;
+            margin-bottom: 20px;
+        }
+        #emailInput {
+            padding: 10px;
+            font-size: 1em;
+            width: 100%;
+            max-width: 300px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        #privacyNotice {
+            color: #777;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+        }
+        #languageButtons {
+            display: flex;
+            gap: 10px;
+        }
+        .langButton {
+            padding: 12px 24px;
+            font-size: 1em;
+            font-weight: 500;
+            cursor: pointer;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.1s ease, background-color 0.3s ease;
+        }
+        .langButton:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+        #mainPage {
+            display: none;
+            width: 100%;
+            max-width: 1200px;
+        }
+        .container {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 20px;
+            width: 100%;
+        }
+        #rulesContainer {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #fff;
+            padding: 15px;
+            width: 200px;
+            min-height: 300px;
+            color: #555;
+            font-size: 0.9em;
+        }
+        #rulesContainer ol {
+            padding-left: 20px;
+            margin: 0;
+        }
+        #rulesContainer li {
+            margin-bottom: 10px;
+        }
+        #videoContainer {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #fff;
+            padding: 15px;
+            max-width: 600px;
+            width: 100%;
+        }
+        #frameDisplay {
+            max-width: 100%;
+            border-radius: 6px;
+        }
+        #inputPrompt {
+            background: #fff;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            text-align: center;
+            display: none;
+            width: 150px;
+        }
+        #inputPrompt p {
+            margin: 0 0 15px;
+            color: #555;
+            font-weight: 500;
+            font-size: 1em;
+        }
+        #inputPrompt .button-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        #inputPrompt button {
+            padding: 12px;
+            font-size: 1em;
+            font-weight: 500;
+            cursor: pointer;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.1s ease, background-color 0.3s ease;
+        }
+        #inputPrompt button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+        #statusContainer {
+            margin-top: 20px;
+            color: #555;
+            font-size: 0.9em;
+        }
+        #loadingProgress {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #777;
+        }
+        #completionPage {
+            display: none;
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+        }
+        #completionPage p {
+            color: #555;
+            font-size: 1.2em;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Welcome Page -->
+    <div id="welcomePage">
+        <h1>This website has been closed temporarily, thank you for your participation!<br>本网站暂时关闭，感谢您的参与！</h1>
+        <p>Please enter your email<br>请输入您的邮箱</p>
+        <input type="email" id="emailInput" placeholder="example@email.com">
+        <p id="privacyNotice">*For research purposes only, your personal information will be kept strictly confidential<br>*仅供研究使用，您的个人信息将被严格保密</p>
+        <div id="languageButtons">
+            <button class="langButton" onclick="startExperiment('zh')">中文 (简体)</button>
+            <button class="langButton" onclick="startExperiment('en')">English</button>
+        </div>
+    </div>
+
+    <!-- Main Page -->
+    <div id="mainPage">
+        <h1 id="mainTitle"></h1>
+        <div class="container">
+            <div id="rulesContainer">
+                <p id="rulesTitle"></p>
+                <ol id="rulesList"></ol>
+            </div>
+            <div id="videoContainer">
+                <img id="frameDisplay" src="" alt="Video Frame">
+            </div>
+            <div id="inputPrompt">
+                <p id="promptText"></p>
+                <div class="button-grid">
+                    <button onclick="submitInput('0')">0</button>
+                    <button onclick="submitInput('1')">1</button>
+                    <button onclick="submitInput('2')">2</button>
+                    <button onclick="submitInput('3')">3</button>
+                    <button onclick="submitInput('4')">4</button>
+                    <button onclick="submitInput('5')">5</button>
+                    <button onclick="submitInput('6')">6</button>
+                    <button onclick="submitInput('7')">7</button>
+                    <button onclick="submitInput('8')">8</button>
+                    <button onclick="submitInput('9')">9</button>
+                    <button onclick="submitInput('n')">n</button>
+                </div>
+            </div>
+        </div>
+        <p id="statusContainer"></p>
+        <p id="loadingProgress"></p>
+    </div>
+
+    <!-- Completion Page -->
+    <div id="completionPage">
+        <h1 id="completionTitle"></h1>
+        <p id="completionMessage"></p>
+    </div>
+
+    <script>
+        const welcomePage = document.getElementById('welcomePage');
+        const mainPage = document.getElementById('mainPage');
+        const completionPage = document.getElementById('completionPage');
+        const emailInput = document.getElementById('emailInput');
+        const frameDisplay = document.getElementById('frameDisplay');
+        const inputPrompt = document.getElementById('inputPrompt');
+        const statusContainer = document.getElementById('statusContainer');
+        const loadingProgress = document.getElementById('loadingProgress');
+        const mainTitle = document.getElementById('mainTitle');
+        const rulesTitle = document.getElementById('rulesTitle');
+        const rulesList = document.getElementById('rulesList');
+        const promptText = document.getElementById('promptText');
+        const completionTitle = document.getElementById('completionTitle');
+        const completionMessage = document.getElementById('completionMessage');
+
+        let modules = [];
+        let selectedModules = [];
+        let currentModuleIndex = 0;
+        let currentFrameIndex = 0;
+        let collectedData = [];
+        let userEmail = '';
+        let language = 'zh'; // Default language
+
+        const MODULE_COUNT = 101;
+        const SELECTED_MODULE_COUNT = 30;
+        const FRAME_INTERVAL = 20;
+        const BASE_URL = 'https://raw.githubusercontent.com/guoshiran/SNN_screenshot/data/';
+        const GOOGLE_FORM_URL = 'https://docs.google.com/forms/u/0/d/e/1FAIpQLSfusBxX1cNbsastoKk1CwRMNt6lNvZ2290zl2XQe0zBWP1wQQ/formResponse';
+
+        const translations = {
+            zh: {
+                mainTitle: 'SNN大规模数据收集',
+                rulesTitle: '规则说明',
+                rules: [
+                    '屏幕上将按顺序展示不同数字的书写过程，请判断正在书写什么数字并点击对应按钮。<strong>如信息不足无法判断请选n以展示下一步书写画面</strong>',
+                    '数字可能以<strong>任何角度、任何大小</strong>书写，甚至上下颠倒',
+                    '请在<strong>有足够把握时</strong>再进行判断',
+                    '如发现任何数字有书写、显示等问题，请下拉页面记录当前<strong>模块数与时间</strong>并发送至<a href="mailto:sguoau@connect.ust.hk">sguoau@connect.ust.hk</a>'
+                ],
+                promptText: '请选择你的判断结果：',
+                statusLabel: '状态：',
+                loadingImages: '加载图片中...',
+                loadingModules: (modules) => `加载模块 ${modules.join(', ')}...`,
+                firstModuleLoaded: '第一个模块加载完成，开始展示',
+                firstModuleFailed: '第一个模块加载失败，请检查图片路径',
+                allModulesLoaded: '所有模块加载完成',
+                moduleProgress: (progress, loaded, total) => `加载进度：${progress}% (${loaded}/${total} 模块)`,
+                moduleFailed: (moduleNum) => `模块 ${moduleNum} 加载失败，帧数为 0`,
+                frameStatus: (module, frame, total) => `模块 ${module}，帧 ${frame}/${total}`,
+                allModulesDone: '所有模块已展示，数据已收集',
+                dataRecorded: (time, input) => `已记录：时间=${time}s, 选择=${input}`,
+                errorIndex: '错误：模块索引超出范围',
+                errorModule: '错误：当前模块未加载',
+                errorFrame: '错误：帧数据无效',
+                alertNoEmail: '请输入您的邮箱！',
+                completionTitle: '实验完成',
+                completionMessage: (email) => `您已完成该实验，感谢参与<br>您的邮箱是：${email}<br>请将本页面截屏与您的收款信息（如微信/银行收款码）发至<a href="mailto:sguoau@connect.ust.hk">sguoau@connect.ust.hk</a>以便后续支付薪酬`
+            },
+            en: {
+                mainTitle: 'SNN Mass Collection',
+                rulesTitle: 'Rules',
+                rules: [
+                    'The screen will display the writing process of different digits in sequence. Please identify the digit being written and click the corresponding button. <strong>If there is insufficient information to judge, select "n" to show the next writing frame.</strong>',
+                    'Digits may be written at <strong>any angle or size</strong>, and may even be upside down.',
+                    'Please make a judgment only when you are <strong>sufficiently confident</strong>.',
+                    'If you encounter any issues with writing or display, please scroll down to record the current <strong>module number and time</strong> and send them to <a href="mailto:sguoau@connect.ust.hk">sguoau@connect.ust.hk</a>.'
+                ],
+                promptText: 'Please select your judgment result:',
+                statusLabel: 'Status:',
+                loadingImages: 'Loading images...',
+                loadingModules: (modules) => `Loading modules ${modules.join(', ')}...`,
+                firstModuleLoaded: 'First module loaded, starting display',
+                firstModuleFailed: 'First module failed to load, please check image paths',
+                allModulesLoaded: 'All modules loaded',
+                moduleProgress: (progress, loaded, total) => `Loading progress: ${progress}% (${loaded}/${total} modules)`,
+                moduleFailed: (moduleNum) => `Module ${moduleNum} failed to load, frame count is 0`,
+                frameStatus: (module, frame, total) => `Module ${module}, Frame ${frame}/${total}`,
+                allModulesDone: 'All modules displayed, data collected',
+                dataRecorded: (time, input) => `Recorded: Time=${time}s, Selection=${input}`,
+                errorIndex: 'Error: Module index out of range',
+                errorModule: 'Error: Current module not loaded',
+                errorFrame: 'Error: Frame data invalid',
+                alertNoEmail: 'Please enter your email!',
+                completionTitle: 'Experiment Completed',
+                completionMessage: (email) => `You have completed the experiment, thank you for your participation.<br>Your email is: ${email}<br>Please take a screenshot of this page and send it along with your payment information (e.g., WeChat/bank payment code) to <a href="mailto:sguoau@connect.ust.hk">sguoau@connect.ust.hk</a> for subsequent compensation.`
+            }
+        };
+
+        function updateMainPageContent() {
+            const t = translations[language];
+            mainTitle.textContent = t.mainTitle;
+            rulesTitle.textContent = t.rulesTitle;
+            rulesList.innerHTML = t.rules.map(rule => `<li>${rule}</li>`).join('');
+            promptText.textContent = t.promptText;
+            statusContainer.innerHTML = `${t.statusLabel}<span id="status">${t.loadingImages}</span>`;
+        }
+
+        function updateCompletionPageContent() {
+            const t = translations[language];
+            completionTitle.textContent = t.completionTitle;
+            completionMessage.innerHTML = t.completionMessage(userEmail);
+        }
+
+        function extractModuleNumber(path) {
+            const match = path.match(/module_(\d+)/);
+            if (match && match[1]) {
+                return Number(match[1]);
+            }
+            console.error('Unable to extract module number from path:', path);
+            return 0;
+        }
+
+        function shuffleModules() {
+            const moduleIndices = Array.from({ length: MODULE_COUNT }, (_, i) => i + 1).filter(num => num !== 66);
+            for (let i = moduleIndices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [moduleIndices[i], moduleIndices[j]] = [moduleIndices[j], moduleIndices[i]];
+            }
+            const selected = moduleIndices.slice(0, SELECTED_MODULE_COUNT);
+            console.log('Selected modules:', selected);
+            return selected.map(num => Number(num));
+        }
+
+        async function loadModuleFrames(moduleNum) {
+            const frames = [];
+            let frameIndex = 1;
+            let attemptIndex = 1;
+
+            while (true) {
+                const frameUrl = `${BASE_URL}module_${moduleNum}/module_${moduleNum}_frame_${attemptIndex}.png`;
+                const img = new Image();
+                img.src = frameUrl;
+
+                const loaded = await new Promise(resolve => {
+                    img.onload = () => resolve(true);
+                    img.onerror = () => resolve(false);
+                });
+
+                if (!loaded) {
+                    attemptIndex++;
+                    if (attemptIndex > 1000) break; // Prevent infinite loop
+                    continue;
+                }
+
+                const moduleValue = extractModuleNumber(frameUrl);
+                frames.push({
+                    url: frameUrl,
+                    time: ((frameIndex - 1) * FRAME_INTERVAL) / 1000,
+                    module: moduleValue
+                });
+                frameIndex++;
+                attemptIndex++;
+            }
+            console.log(`Module ${moduleNum} loaded, frame count: ${frames.length}`);
+            return frames;
+        }
+
+        async function loadFrames() {
+            selectedModules = shuffleModules();
+            const status = document.getElementById('status');
+            status.textContent = translations[language].loadingModules(selectedModules);
+
+            const firstModuleNum = selectedModules[0];
+            const firstModuleFrames = await loadModuleFrames(firstModuleNum);
+            if (firstModuleFrames.length > 0) {
+                modules.push(firstModuleFrames);
+                status.textContent = translations[language].firstModuleLoaded;
+                showNextFrame();
+            } else {
+                status.textContent = translations[language].firstModuleFailed;
+                return;
+            }
+
+            const remainingModules = selectedModules.slice(1);
+            let loadedModules = 1;
+            const totalModules = selectedModules.length;
+
+            const loadRemaining = remainingModules.map(async (moduleNum) => {
+                const frames = await loadModuleFrames(moduleNum);
+                if (frames.length > 0) {
+                    modules.push(frames);
+                    loadedModules++;
+                    const progress = Math.round((loadedModules / totalModules) * 100);
+                    loadingProgress.textContent = translations[language].moduleProgress(progress, loadedModules, totalModules);
+                } else {
+                    console.warn(translations[language].moduleFailed(moduleNum));
+                }
+            });
+
+            await Promise.all(loadRemaining);
+
+            if (modules.length === 0) {
+                status.textContent = translations[language].firstModuleFailed;
+                return;
+            }
+
+            console.log(`Total modules loaded: ${modules.length}`);
+            loadingProgress.textContent = translations[language].allModulesLoaded;
+        }
+
+        function showNextFrame() {
+            const status = document.getElementById('status');
+            console.log(`Current module index: ${currentModuleIndex}, Total modules: ${modules.length}`);
+            if (currentModuleIndex >= modules.length) {
+                status.textContent = translations[language].allModulesDone;
+                console.log('Collected data:', collectedData);
+                mainPage.style.display = 'none';
+                completionPage.style.display = 'block';
+                updateCompletionPageContent();
+                return;
+            }
+
+            const currentModule = modules[currentModuleIndex];
+            console.log(`Current module frame count: ${currentModule ? currentModule.length : 'undefined'}, Current frame index: ${currentFrameIndex}`);
+            if (!currentModule || currentFrameIndex >= currentModule.length) {
+                currentModuleIndex++;
+                currentFrameIndex = 0;
+                showNextFrame();
+                return;
+            }
+
+            const frame = currentModule[currentFrameIndex];
+            frameDisplay.src = frame.url;
+            inputPrompt.style.display = 'block';
+            status.textContent = translations[language].frameStatus(frame.module, currentFrameIndex + 1, currentModule.length);
+        }
+
+        async function sendToGoogleSheets(data) {
+            try {
+                const moduleValue = data.module;
+                console.log('Module value sent:', moduleValue);
+                const formData = new FormData();
+                formData.append('entry.735277437', moduleValue.toString());
+                formData.append('entry.690842731', data.email);
+                formData.append('entry.5521573744', data.videoTime);
+                formData.append('entry.540771953', data.userInput);
+
+                const response = await fetch(GOOGLE_FORM_URL, {
+                    method: 'POST',
+                    body: formData,
+                    mode: 'no-cors'
+                });
+                console.log('Data sent to Google Forms:', data);
+            } catch (error) {
+                console.error('Error sending data to Google Forms:', error);
+            }
+        }
+
+        function submitInput(value) {
+            console.log(`Button clicked, value: ${value}`);
+            console.log(`Current module index: ${currentModuleIndex}, Selected module: ${selectedModules[currentModuleIndex]}`);
+            console.log(`Current email: ${userEmail}`);
+
+            if (currentModuleIndex >= modules.length || currentModuleIndex < 0) {
+                console.error('Module index out of range:', currentModuleIndex);
+                document.getElementById('status').textContent = translations[language].errorIndex;
+                return;
+            }
+
+            const currentModule = modules[currentModuleIndex];
+            if (!currentModule) {
+                console.error('Current module not loaded:', currentModuleIndex);
+                document.getElementById('status').textContent = translations[language].errorModule;
+                return;
+            }
+
+            if (currentFrameIndex >= currentModule.length || currentFrameIndex < 0) {
+                console.error('Frame index out of range:', { currentModuleIndex, currentFrameIndex, moduleLength: currentModule.length });
+                currentModuleIndex++;
+                currentFrameIndex = 0;
+                showNextFrame();
+                return;
+            }
+
+            const frame = currentModule[currentFrameIndex];
+            if (!frame) {
+                console.error('Invalid frame data:', frame);
+                document.getElementById('status').textContent = translations[language].errorFrame;
+                return;
+            }
+
+            const data = {
+                timestamp: new Date().toISOString(),
+                email: userEmail || 'unknown',
+                module: frame.module,
+                videoTime: frame.time ? frame.time.toFixed(2) : '0.00',
+                userInput: value
+            };
+            console.log('Data to send:', data);
+            collectedData.push(data);
+            document.getElementById('status').textContent = translations[language].dataRecorded(data.videoTime, data.userInput);
+
+            sendToGoogleSheets(data);
+
+            currentFrameIndex++;
+            if (currentFrameIndex >= currentModule.length) {
+                currentModuleIndex++;
+                currentFrameIndex = 0;
+            }
+            showNextFrame();
+        }
+
+        function startExperiment(lang) {
+            userEmail = emailInput.value.trim();
+            if (!userEmail) {
+                alert(translations[language].alertNoEmail);
+                return;
+            }
+            language = lang;
+            console.log('User email:', userEmail, 'Selected language:', language);
+            welcomePage.style.display = 'none';
+            mainPage.style副书记='block';
+            updateMainPageContent();
+            loadFrames();
+        }
+    </script>
