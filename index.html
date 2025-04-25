@@ -64,7 +64,7 @@
             border-radius: 6px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             transition: transform 0.1s ease, background-color 0.3s ease;
-            pointer-events: auto; /* 确保按钮可点击 */
+            pointer-events: auto;
         }
         .langButton:hover {
             background-color: #0056b3;
@@ -228,20 +228,7 @@
     </div>
 
     <script>
-        const welcomePage = document.getElementById('welcomePage');
-        const mainPage = document.getElementById('mainPage');
-        const completionPage = document.getElementById('completionPage');
-        const emailInput = document.get_ElementById('emailInput');
-        const frameDisplay = document.getElementById('frameDisplay');
-        const inputPrompt = document.getElementById('inputPrompt');
-        const statusContainer = document.getElementById('statusContainer');
-        const loadingProgress = document.getElementById('loadingProgress');
-        const mainTitle = document.getElementById('mainTitle');
-        const rulesTitle = document.getElementById('rulesTitle');
-        const rulesList = document.getElementById('rulesList');
-        const promptText = document.getElementById('promptText');
-        const completionTitle = document.getElementById('completionTitle');
-        const completionMessage = document.getElementById('completionMessage');
+        let emailInput, welcomePage, mainPage, completionPage, frameDisplay, inputPrompt, statusContainer, loadingProgress, mainTitle, rulesTitle, rulesList, promptText, completionTitle, completionMessage;
 
         let modules = [];
         let selectedModules = [];
@@ -316,6 +303,23 @@
             }
         };
 
+        function initializeDOMElements() {
+            emailInput = document.getElementById('emailInput');
+            welcomePage = document.getElementById('welcomePage');
+            mainPage = document.getElementById('mainPage');
+            completionPage = document.getElementById('completionPage');
+            frameDisplay = document.getElementById('frameDisplay');
+            inputPrompt = document.getElementById('inputPrompt');
+            statusContainer = document.getElementById('statusContainer');
+            loadingProgress = document.getElementById('loadingProgress');
+            mainTitle = document.getElementById('mainTitle');
+            rulesTitle = document.getElementById('rulesTitle');
+            rulesList = document.getElementById('rulesList');
+            promptText = document.getElementById('promptText');
+            completionTitle = document.getElementById('completionTitle');
+            completionMessage = document.getElementById('completionMessage');
+        }
+
         function updateMainPageContent() {
             const t = translations[language];
             mainTitle.textContent = t.mainTitle;
@@ -353,9 +357,10 @@
 
         async function loadModuleFrames(moduleNum) {
             const frames = [];
-            let frameIndex = 1;
             let attemptIndex = 1;
             const maxAttempts = 1000;
+            let consecutiveFailures = 0;
+            const failedFrames = [];
 
             while (attemptIndex <= maxAttempts) {
                 const frameUrl = `${BASE_URL}module_${moduleNum}/module_${moduleNum}_frame_${attemptIndex}.png`;
@@ -368,24 +373,29 @@
                 });
 
                 if (loaded) {
-                    const moduleValue = extractModuleNumber(frameUrl);
                     frames.push({
                         url: frameUrl,
-                        time: ((frameIndex - 1) * FRAME_INTERVAL) / 1000,
-                        module: moduleValue
+                        time: (frames.length * FRAME_INTERVAL) / 1000,
+                        module: moduleNum
                     });
-                    frameIndex++;
                     console.log(`Loaded frame: ${frameUrl}`);
+                    consecutiveFailures = 0; // 重置连续失败计数
                 } else {
-                    console.warn(`Frame not found: ${frameUrl}`);
+                    failedFrames.push(frameUrl);
+                    consecutiveFailures++;
+                    console.log(`Frame ${frameUrl} not found (404)`);
+                    if (consecutiveFailures >= 3) {
+                        console.log(`Module ${moduleNum} ended due to 3 consecutive frame failures at attempt ${attemptIndex}`);
+                        break;
+                    }
                 }
                 attemptIndex++;
             }
 
             if (frames.length === 0) {
-                console.error(`Module ${moduleNum} has no valid frames`);
+                console.error(`Module ${moduleNum} failed to load any frames. Attempted URLs:`, failedFrames);
             } else {
-                console.log(`Module ${moduleNum} loaded, frame count: ${frames.length}`);
+                console.log(`Module ${moduleNum} loaded successfully with ${frames.length} frames`);
             }
             return frames;
         }
@@ -393,30 +403,35 @@
         async function preloadFrames() {
             const preloadStatus = document.getElementById('preloadStatus');
             selectedModules = shuffleModules();
+            console.log('Selected modules:', selectedModules);
             preloadStatus.textContent = translations[language].loadingModules(selectedModules);
 
             let loadedModules = 0;
             const totalModules = selectedModules.length;
+            const failedModules = [];
 
             for (const moduleNum of selectedModules) {
                 const frames = await loadModuleFrames(moduleNum);
                 if (frames.length > 0) {
                     modules.push(frames);
                     loadedModules++;
-                    const progress = Math.round((loadedModules / totalModules) * 100);
-                    preloadStatus.textContent = translations[language].moduleProgress(progress, loadedModules, totalModules);
+                    preloadStatus.textContent = translations[language].moduleProgress(
+                        Math.round((loadedModules / totalModules) * 100),
+                        loadedModules,
+                        totalModules
+                    );
                 } else {
-                    console.warn(translations[language].moduleFailed(moduleNum));
-                    preloadStatus.textContent = translations[language].moduleFailed(moduleNum);
+                    failedModules.push(moduleNum);
+                    console.warn(`Module ${moduleNum} failed to load any frames`);
                 }
             }
 
             if (modules.length === 0) {
-                preloadStatus.textContent = `${translations[language].firstModuleFailed} 请联系支持团队：sguoau@connect.ust.hk`;
+                preloadStatus.textContent = `${translations[language].firstModuleFailed} Failed modules: ${failedModules.join(', ')}. Contact support: sguoau@connect.ust.hk`;
                 return;
             }
 
-            console.log(`Total modules preloaded: ${modules.length}`);
+            console.log('Loaded modules:', modules);
             preloadStatus.textContent = translations[language].allModulesLoaded;
         }
 
@@ -535,7 +550,7 @@
                     alert(translations[language].alertNoEmail);
                     return;
                 }
-                language = lang; // 修复：确保 lang 是函数参数
+                language = lang;
                 console.log('User email:', userEmail, 'Selected language:', language);
                 welcomePage.style.display = 'none';
                 mainPage.style.display = 'block';
@@ -543,7 +558,7 @@
                 if (modules.length > 0) {
                     showNextFrame();
                 } else {
-                    document.getElementById('status').textContent = `${translations[language].firstModuleFailed} 请联系支持团队：sguoau@connect.ust.hk`;
+                    document.getElementById('status').textContent = `${translations[language].firstModuleFailed} Contact support: sguoau@connect.ust.hk`;
                 }
             } catch (error) {
                 console.error('Error in startExperiment:', error);
@@ -552,6 +567,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            initializeDOMElements();
             preloadFrames();
         });
     </script>
