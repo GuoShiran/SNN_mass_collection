@@ -237,7 +237,7 @@
         const MODULE_COUNT = 101;
         const SELECTED_MODULE_COUNT = 30;
         const FRAME_INTERVAL = 20;
-        const BASE_URL = 'https://raw.githubusercontent.com/guoshiran/SNN_mass_collection/data/';
+        const BASE_URL = 'https://pub-157150daba934ac3a4a79a4320fe036b.r2.dev/'; // Updated to Cloudflare R2
         const GOOGLE_FORM_URL = 'https://docs.google.com/forms/u/0/d/e/1FAIpQLSfusBxX1cNbsastoKk1CwRMNt6lNvZ2290zl2XQe0zBWP1wQQ/formResponse';
 
         const translations = {
@@ -408,13 +408,10 @@
                 if (frames.length > 0) {
                     modules.push(frames);
                     loadedModulesCount++;
-                    // 更新加载进度
                     const progress = Math.round((loadedModulesCount / totalModules) * 100);
                     preloadStatus.textContent = translations[language].moduleProgress(progress, loadedModulesCount, totalModules);
-                    // 如果实验页面已显示，实时更新加载进度
                     if (mainPage.style.display === 'block') {
                         loadingProgress.textContent = translations[language].moduleProgress(progress, loadedModulesCount, totalModules);
-                        // 如果这是第一个加载成功的模块，尝试展示
                         if (loadedModulesCount === 1 && currentModuleIndex === 0) {
                             showNextFrame();
                         }
@@ -443,7 +440,6 @@
 
         function showNextFrame() {
             if (currentModuleIndex >= modules.length && !isLoadingComplete) {
-                // 模块还未加载完成，显示加载提示
                 frameDisplay.src = '';
                 inputPrompt.style.display = 'none';
                 loadingProgress.textContent = translations[language].loadingPrompt;
@@ -451,7 +447,6 @@
             }
 
             if (currentModuleIndex >= modules.length && isLoadingComplete) {
-                // 所有模块已展示，进入完成页面
                 console.log('Collected data:', collectedData);
                 mainPage.style.display = 'none';
                 completionPage.style.display = 'block';
@@ -461,7 +456,6 @@
 
             const currentModule = modules[currentModuleIndex];
             if (!currentModule || currentModule.length === 0) {
-                // 当前模块还未加载，显示加载提示
                 frameDisplay.src = '';
                 inputPrompt.style.display = 'none';
                 loadingProgress.textContent = translations[language].loadingPrompt;
@@ -478,7 +472,6 @@
             const frame = currentModule[currentFrameIndex];
             frameDisplay.src = frame.url;
             inputPrompt.style.display = 'block';
-            // 确保加载进度显示最新状态
             if (!isLoadingComplete) {
                 loadingProgress.textContent = translations[language].moduleProgress(
                     Math.round((loadedModulesCount / SELECTED_MODULE_COUNT) * 100),
