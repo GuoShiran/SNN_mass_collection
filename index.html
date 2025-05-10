@@ -235,19 +235,20 @@
         let loadedModulesCount = 0; // 已加载的模块数量
 
         const MODULE_COUNT = 101;
-        const SELECTED_MODULE_COUNT = 100;
+        const SELECTED_MODULE_COUNT = 30;
         const FRAME_INTERVAL = 20;
-        const BASE_URL = 'https://pub-157150daba934ac3a4a79a4320fe036b.r2.dev/'; // Updated to Cloudflare R2
+        const BASE_URL = 'https://pub-157150daba934ac3a4a79a4320fe036b.r2.dev/'; // Using Cloudflare R2
         const GOOGLE_FORM_URL = 'https://docs.google.com/forms/u/0/d/e/1FAIpQLSfusBxX1cNbsastoKk1CwRMNt6lNvZ2290zl2XQe0zBWP1wQQ/formResponse';
 
         const translations = {
             zh: {
-                mainTitle: 'SNN大规模数据收集',
+                mainTitle: '屏幕上正在写什么数字？', // Updated title
                 rulesTitle: '规则说明',
-                rules: [
-                    '屏幕上将按顺序展示不同数字的书写过程，请判断正在书写什么数字并点击对应按钮。<strong>如信息不足无法判断请选n以展示下一步书写画面</strong>',
-                    '数字可能以<strong>任何角度、任何大小</strong>书写，甚至上下倒',
-                    '请在<strong>有足够把握时</strong>再进行判断'
+                rules: [ // Updated rules
+                    '我们将逐帧展示某个数字的书写过程。',
+                    '请在书写过程中判断这个数字是什么。',
+                    '如果信息不足，可以选择“n”跳到下一帧。',
+                    '如果首次判断错误也没关系，您可以在后续帧中更改选择。'
                 ],
                 promptText: '请选择你的判断结果：',
                 loadingImages: '加载图片中...',
@@ -269,12 +270,13 @@
                 completionMessage: (email) => `您已完成该实验，感谢参与<br>您的邮箱是：${email}<br>请将本页面截屏与您的收款信息（如微信/银行收款码）发至<a href="mailto:sguoau@connect.ust.hk">sguoau@connect.ust.hk</a>以便后续支付薪酬`
             },
             en: {
-                mainTitle: 'SNN Mass Collection',
+                mainTitle: 'What Number is Being Written on the Screen?', // Updated title
                 rulesTitle: 'Rules',
-                rules: [
-                    'The screen will display the writing process of different digits in sequence. Please identify the digit being written and click the corresponding button. <strong>If there is insufficient information to judge, select "n" to show the next writing frame.</strong>',
-                    'Digits may be written at <strong>any angle or size</strong>, and may even be upside down.',
-                    'Please make a judgment only when you are <strong>sufficiently confident</strong>.'
+                rules: [ // Updated rules
+                    'We will show the writing process of a number frame by frame.',
+                    'Please identify the actual number being written.',
+                    'If there’s not enough information, select “n” to skip to the next frame.',
+                    'It’s okay if your first guess is wrong—you can change your choice in later frames.'
                 ],
                 promptText: 'Please select your judgment result:',
                 loadingImages: 'Loading images...',
