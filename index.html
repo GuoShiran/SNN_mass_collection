@@ -195,7 +195,7 @@
             background-color: #0056b3;
             transform: translateY(-2px);
         }
-        #loadingProgress {
+        #loadingProgress, #currentProgress {
             margin-top: 10px;
             font-size: 0.9em;
             color: #777;
@@ -272,6 +272,7 @@
             </div>
         </div>
         <p id="loadingProgress"></p>
+        <p id="currentProgress"></p>
     </div>
 
     <!-- Completion Page -->
@@ -281,7 +282,7 @@
     </div>
 
     <script>
-        let emailInput, chineseNameInput, englishNameInput, welcomePage, videoPage, mainPage, completionPage, frameDisplay, inputPrompt, loadingProgress, mainTitle, rulesTitle, rulesList, promptText, completionTitle, completionMessage, videoLink, watchButton;
+        let emailInput, chineseNameInput, englishNameInput, welcomePage, videoPage, mainPage, completionPage, frameDisplay, inputPrompt, loadingProgress, currentProgress, mainTitle, rulesTitle, rulesList, promptText, completionTitle, completionMessage, videoLink, watchButton;
 
         let modules = [];
         let selectedModules = [];
@@ -311,7 +312,7 @@
 
         const translations = {
             zh: {
-                mainTitle: '屏幕上正在写什么数字？',
+                mainTitle: '屏幕上正在写什么数字？（请不要刷新页面）',
                 rulesTitle: '规则说明',
                 rules: [
                     '我们将逐帧展示某个数字的书写过程。',
@@ -326,6 +327,7 @@
                 firstModuleFailed: '第一个模块加载失败，请检查图片路径',
                 allModulesLoaded: '所有模块加载完成',
                 moduleProgress: (progress, loaded, total) => `加载进度：${progress}% (${loaded}/${total} 模块)`,
+                currentProgress: (current, total) => `当前进度：${current}/${total}`,
                 moduleFailed: (moduleNum) => `模块 ${moduleNum} 加载失败，帧数为 0`,
                 allModulesDone: '所有模块已展示，数据已收集',
                 dataRecorded: (time, input) => `已记录：时间=${time}s, 选择=${input}`,
@@ -341,7 +343,7 @@
                 completionMessage: (email, chineseName, englishName) => `您已完成该实验，感谢参与<br>您的邮箱是：${email}<br>您的中文名是：${chineseName}<br>您的英文名是：${englishName}<br>请将本页面截屏与您的收款信息（如微信/银行收款码）发至<a href="mailto:sguoau@connect.ust.hk">sguoau@connect.ust.hk</a>以便后续支付薪酬`
             },
             en: {
-                mainTitle: 'What Number is Being Written on the Screen?',
+                mainTitle: 'What Number is Being Written on the Screen? (Please do not refresh the page)',
                 rulesTitle: 'Rules',
                 rules: [
                     'We will show the writing process of a number frame by frame.',
@@ -356,6 +358,7 @@
                 firstModuleFailed: 'First module failed to load, please check image paths',
                 allModulesLoaded: 'All modules loaded',
                 moduleProgress: (progress, loaded, total) => `Loading progress: ${progress}% (${loaded}/${total} modules)`,
+                currentProgress: (current, total) => `Current Progress: ${current}/${total}`,
                 moduleFailed: (moduleNum) => `Module ${moduleNum} failed to load, frame count is 0`,
                 allModulesDone: 'All modules displayed, data collected',
                 dataRecorded: (time, input) => `Recorded: Time=${time}s, Selection=${input}`,
@@ -383,6 +386,7 @@
             frameDisplay = document.getElementById('frameDisplay');
             inputPrompt = document.getElementById('inputPrompt');
             loadingProgress = document.getElementById('loadingProgress');
+            currentProgress = document.getElementById('currentProgress');
             mainTitle = document.getElementById('mainTitle');
             rulesTitle = document.getElementById('rulesTitle');
             rulesList = document.getElementById('rulesList');
@@ -400,6 +404,7 @@
             rulesList.innerHTML = t.rules.map(rule => `<li>${rule}</li>`).join('');
             promptText.textContent = t.promptText;
             loadingProgress.textContent = t.loadingImages;
+            currentProgress.textContent = t.currentProgress(0, SELECTED_MODULE_COUNT);
         }
 
         function updateCompletionPageContent() {
@@ -418,21 +423,20 @@
         }
 
         function shuffleModules() {
-    const moduleIndices = Array.from({ length: MODULE_COUNT }, (_, i) => i + 1).filter(num => num !== 66);
-    for (let i = moduleIndices.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [moduleIndices[i], moduleIndices[j]] = [moduleIndices[j], moduleIndices[i]];
-    }
-    const selected = moduleIndices; // Use all modules instead of slicing to 30
-    console.log('Selected modules:', selected);
-    return selected.map(num => Number(num));
-}
+            const moduleIndices = Array.from({ length: MODULE_COUNT }, (_, i) => i + 1).filter(num => num !== 66);
+            for (let i = moduleIndices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [moduleIndices[i], moduleIndices[j]] = [moduleIndices[j], moduleIndices[i]];
+            }
+            const selected = moduleIndices;
+            console.log('Selected modules:', selected);
+            return selected.map(num => Number(num));
+        }
 
         async function loadModuleFrames(moduleNum) {
             const frames = [];
             let attemptIndex = 1;
             const maxAttempts = 1000;
-            let consecutiveFailures = 0;
             const failedFrames = [];
 
             while (attemptIndex <= maxAttempts) {
@@ -452,15 +456,10 @@
                         module: moduleNum
                     });
                     console.log(`Loaded frame: ${frameUrl}`);
-                    consecutiveFailures = 0;
                 } else {
                     failedFrames.push(frameUrl);
-                    consecutiveFailures++;
-                    console.log(`Frame ${frameUrl} not found (404)`);
-                    if (consecutiveFailures >= 3) {
-                        console.log(`Module ${moduleNum} ended due to 3 consecutive frame failures at attempt ${attemptIndex}`);
-                        break;
-                    }
+                    console.log(`Frame ${frameUrl} not found (404), ending module ${moduleNum} at frame ${attemptIndex}`);
+                    break; // Stop loading this module on the first failure
                 }
                 attemptIndex++;
             }
@@ -523,6 +522,7 @@
                 frameDisplay.src = '';
                 inputPrompt.style.display = 'none';
                 loadingProgress.textContent = translations[language].loadingPrompt;
+                currentProgress.textContent = translations[language].currentProgress(currentModuleIndex + 1, SELECTED_MODULE_COUNT);
                 return;
             }
 
@@ -539,6 +539,7 @@
                 frameDisplay.src = '';
                 inputPrompt.style.display = 'none';
                 loadingProgress.textContent = translations[language].loadingPrompt;
+                currentProgress.textContent = translations[language].currentProgress(currentModuleIndex + 1, SELECTED_MODULE_COUNT);
                 return;
             }
 
@@ -561,6 +562,7 @@
             } else {
                 loadingProgress.textContent = translations[language].allModulesLoaded;
             }
+            currentProgress.textContent = translations[language].currentProgress(currentModuleIndex + 1, SELECTED_MODULE_COUNT);
         }
 
         async function sendToGoogleSheets(data) {
@@ -672,14 +674,13 @@
                 welcomePage.style.display = 'none';
                 videoPage.style.display = 'flex';
                 videoLink.href = VIDEO_URLS[language];
-                videoLink.textContent = VIDEO_LINK_TEXT[language]; // Set link text based on language
+                videoLink.textContent = VIDEO_LINK_TEXT[language];
                 watchButton.disabled = true;
                 console.log('Video link set to:', VIDEO_URLS[language]);
-                // Simulate video watching with a timer (adjust duration to match video length, e.g., 30 seconds)
                 setTimeout(() => {
                     watchButton.disabled = false;
                     console.log('Video presumed watched, enabling button');
-                }, 30000); // 30 seconds as a placeholder; adjust based on video duration
+                }, 30000);
             } catch (error) {
                 console.error('Error in startExperiment:', error);
                 alert('发生错误，请检查控制台日志并联系支持团队：sguoau@connect.ust.hk');
@@ -692,7 +693,6 @@
                 mainPage.style.display = 'block';
                 updateMainPageContent();
                 showNextFrame();
-                preloadFrames(); // Ensure frames start loading
             } else {
                 alert('请观看视频至结束后再点击确认。/ Please watch the video until the end before proceeding.');
             }
@@ -700,7 +700,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             initializeDOMElements();
-            preloadFrames(); // Start preloading in the background
+            preloadFrames();
         });
     </script>
     <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93e8e2b7dd3c458f',t:'MTc0NzA0MjEwMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
