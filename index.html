@@ -35,7 +35,7 @@
             font-size: 1em;
             margin-bottom: 20px;
         }
-        #emailInput {
+        #emailInput, #chineseNameInput, #englishNameInput {
             padding: 10px;
             font-size: 1em;
             width: 100%;
@@ -173,9 +173,13 @@
 <body>
     <!-- Welcome Page -->
     <div id="welcomePage">
-        <h1>This website has been closed temporarily, thank you for your participation!<br>本网站暂时关闭，感谢您的参与！</h1>
+        <h1>Volunteer Data Collection<br>志愿者数据收集</h1>
         <p>Please enter your email<br>请输入您的邮箱</p>
         <input type="email" id="emailInput" placeholder="example@email.com">
+        <p>Please enter your Chinese name (if applicable)<br>请输入您的中文名（如有）</p>
+        <input type="text" id="chineseNameInput" placeholder="陈大文">
+        <p>Please enter your English name<br>请输入您的英文名</p>
+        <input type="text" id="englishNameInput" placeholder="CHAN Tai Man">
         <p id="privacyNotice">*For research purposes only, your personal information will be kept strictly confidential<br>*仅供研究使用，您的个人信息将被严格保密</p>
         <div id="languageButtons">
             <button class="langButton" onclick="startExperiment('zh')">中文 (简体)</button>
@@ -222,7 +226,7 @@
     </div>
 
     <script>
-        let emailInput, welcomePage, mainPage, completionPage, frameDisplay, inputPrompt, loadingProgress, mainTitle, rulesTitle, rulesList, promptText, completionTitle, completionMessage;
+        let emailInput, chineseNameInput, englishNameInput, welcomePage, mainPage, completionPage, frameDisplay, inputPrompt, loadingProgress, mainTitle, rulesTitle, rulesList, promptText, completionTitle, completionMessage;
 
         let modules = [];
         let selectedModules = [];
@@ -230,6 +234,8 @@
         let currentFrameIndex = 0;
         let collectedData = [];
         let userEmail = '';
+        let chineseName = '';
+        let englishName = '';
         let language = 'zh'; // Default language
         let isLoadingComplete = false; // 标记加载是否完成
         let loadedModulesCount = 0; // 已加载的模块数量
@@ -242,9 +248,9 @@
 
         const translations = {
             zh: {
-                mainTitle: '屏幕上正在写什么数字？', // Updated title
+                mainTitle: '屏幕上正在写什么数字？',
                 rulesTitle: '规则说明',
-                rules: [ // Updated rules
+                rules: [
                     '我们将逐帧展示某个数字的书写过程。',
                     '请在书写过程中判断这个数字是什么。',
                     '如果信息不足，可以选择“n”跳到下一帧。',
@@ -264,15 +270,17 @@
                 errorModule: '错误：当前模块未加载',
                 errorFrame: '错误：帧数据无效',
                 alertNoEmail: '请输入您的邮箱！',
+                alertNoChineseName: '请输入您的中文名！',
+                alertNoEnglishName: '请输入您的英文名！',
                 invalidInput: '无效输入，请仔细阅读规则并重新判断！',
                 loadingPrompt: '加载中，请稍候...',
                 completionTitle: '实验完成',
-                completionMessage: (email) => `您已完成该实验，感谢参与<br>您的邮箱是：${email}<br>请将本页面截屏与您的收款信息（如微信/银行收款码）发至<a href="mailto:sguoau@connect.ust.hk">sguoau@connect.ust.hk</a>以便后续支付薪酬`
+                completionMessage: (email, chineseName, englishName) => `您已完成该实验，感谢参与<br>您的邮箱是：${email}<br>您的中文名是：${chineseName}<br>您的英文名是：${englishName}<br>请将本页面截屏与您的收款信息（如微信/银行收款码）发至<a href="mailto:sguoau@connect.ust.hk">sguoau@connect.ust.hk</a>以便后续支付薪酬`
             },
             en: {
-                mainTitle: 'What Number is Being Written on the Screen?', // Updated title
+                mainTitle: 'What Number is Being Written on the Screen?',
                 rulesTitle: 'Rules',
-                rules: [ // Updated rules
+                rules: [
                     'We will show the writing process of a number frame by frame.',
                     'Please identify the actual number being written.',
                     'If there’s not enough information, select “n” to skip to the next frame.',
@@ -292,15 +300,19 @@
                 errorModule: 'Error: Current module not loaded',
                 errorFrame: 'Error: Frame data invalid',
                 alertNoEmail: 'Please enter your email!',
+                alertNoChineseName: 'Please enter your Chinese name!',
+                alertNoEnglishName: 'Please enter your English name!',
                 invalidInput: 'Invalid input, please read the rules carefully and try again!',
                 loadingPrompt: 'Loading, please wait...',
                 completionTitle: 'Experiment Completed',
-                completionMessage: (email) => `You have completed the experiment, thank you for your participation.<br>Your email is: ${email}<br>Please take a screenshot of this page and send it along with your payment information (e.g., WeChat/bank payment code) to <a href="mailto:sguoau@connect.ust.hk">sguoau@connect.ust.hk</a> for subsequent compensation.`
+                completionMessage: (email, chineseName, englishName) => `You have completed the experiment, thank you for your participation.<br>Your email is: ${email}<br>Your Chinese name is: ${chineseName}<br>Your English name is: ${englishName}<br>Please take a screenshot of this page and send it along with your payment information (e.g., WeChat/bank payment code) to <a href="mailto:sguoau@connect.ust.hk">sguoau@connect.ust.hk</a> for subsequent compensation.`
             }
         };
 
         function initializeDOMElements() {
             emailInput = document.getElementById('emailInput');
+            chineseNameInput = document.getElementById('chineseNameInput');
+            englishNameInput = document.getElementById('englishNameInput');
             welcomePage = document.getElementById('welcomePage');
             mainPage = document.getElementById('mainPage');
             completionPage = document.getElementById('completionPage');
@@ -327,7 +339,7 @@
         function updateCompletionPageContent() {
             const t = translations[language];
             completionTitle.textContent = t.completionTitle;
-            completionMessage.innerHTML = t.completionMessage(userEmail);
+            completionMessage.innerHTML = t.completionMessage(userEmail, chineseName, englishName);
         }
 
         function extractModuleNumber(path) {
@@ -490,10 +502,12 @@
                 const moduleValue = data.module;
                 console.log('Module value sent:', moduleValue);
                 const formData = new FormData();
-                formData.append('entry.735277437', moduleValue.toString());
-                formData.append('entry.690842731', data.email);
-                formData.append('entry.5521573744', data.videoTime);
-                formData.append('entry.540771953', data.userInput);
+                formData.append('entry.735277437', moduleValue.toString()); // Module
+                formData.append('entry.690842731', data.email); // Email
+                formData.append('entry.5521573744', data.videoTime); // Video Time
+                formData.append('entry.540771953', data.userInput); // User Input
+                formData.append('entry.1784624963', data.chineseName || 'N/A'); // Chinese Name (Placeholder ID)
+                formData.append('entry.1963720464"', data.englishName || 'N/A'); // English Name (Placeholder ID)
 
                 const response = await fetch(GOOGLE_FORM_URL, {
                     method: 'POST',
@@ -509,7 +523,7 @@
         function submitInput(value) {
             console.log(`Button clicked, value: ${value}`);
             console.log(`Current module index: ${currentModuleIndex}, Selected module: ${selectedModules[currentModuleIndex]}`);
-            console.log(`Current email: ${userEmail}`);
+            console.log(`Current email: ${userEmail}, Chinese name: ${chineseName}, English name: ${englishName}`);
 
             if (currentModuleIndex >= modules.length || currentModuleIndex < 0) {
                 console.error('Module index out of range:', currentModuleIndex);
@@ -547,6 +561,8 @@
             const data = {
                 timestamp: new Date().toISOString(),
                 email: userEmail || 'unknown',
+                chineseName: chineseName || 'N/A',
+                englishName: englishName || 'N/A',
                 module: frame.module,
                 videoTime: frame.time ? frame.time.toFixed(2) : '0.00',
                 userInput: value
@@ -568,12 +584,24 @@
         function startExperiment(lang) {
             try {
                 userEmail = emailInput.value.trim();
+                chineseName = chineseNameInput.value.trim();
+                englishName = englishNameInput.value.trim();
+
                 if (!userEmail) {
                     alert(translations[language].alertNoEmail);
                     return;
                 }
+                if (!chineseName) {
+                    alert(translations[language].alertNoChineseName);
+                    return;
+                }
+                if (!englishName) {
+                    alert(translations[language].alertNoEnglishName);
+                    return;
+                }
+
                 language = lang;
-                console.log('User email:', userEmail, 'Selected language:', language);
+                console.log('User email:', userEmail, 'Chinese name:', chineseName, 'English name:', englishName, 'Selected language:', language);
 
                 welcomePage.style.display = 'none';
                 mainPage.style.display = 'block';
