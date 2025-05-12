@@ -70,6 +70,54 @@
             background-color: #0056b3;
             transform: translateY(-2px);
         }
+        #videoPage {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            max-width: 800px;
+            width: 100%;
+        }
+        #videoLink {
+            display: inline-block;
+            padding: 12px 24px;
+            font-size: 1em;
+            font-weight: 500;
+            cursor: pointer;
+            background-color: #ff4d4f;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.1s ease, background-color 0.3s ease;
+            margin: 20px 0;
+        }
+        #videoLink:hover {
+            background-color: #d9363e;
+            transform: translateY(-2px);
+        }
+        #watchButton {
+            padding: 12px 24px;
+            font-size: 1em;
+            font-weight: 500;
+            cursor: pointer;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.1s ease, background-color 0.3s ease;
+            pointer-events: auto;
+            margin-bottom: 20px;
+        }
+        #watchButton:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        #watchButton:hover:not(:disabled) {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
         #mainPage {
             display: none;
             width: 100%;
@@ -188,6 +236,13 @@
         <p id="preloadStatus"></p>
     </div>
 
+    <!-- Video Page -->
+    <div id="videoPage">
+        <h1>Rules Summary / 规则简述</h1>
+        <a id="videoLink" href="" target="_blank"></a>
+        <button id="watchButton" onclick="proceedToMainPage()" disabled>我已认真观看 / I have watched carefully</button>
+    </div>
+
     <!-- Main Page -->
     <div id="mainPage">
         <h1 id="mainTitle"></h1>
@@ -226,7 +281,7 @@
     </div>
 
     <script>
-        let emailInput, chineseNameInput, englishNameInput, welcomePage, mainPage, completionPage, frameDisplay, inputPrompt, loadingProgress, mainTitle, rulesTitle, rulesList, promptText, completionTitle, completionMessage;
+        let emailInput, chineseNameInput, englishNameInput, welcomePage, videoPage, mainPage, completionPage, frameDisplay, inputPrompt, loadingProgress, mainTitle, rulesTitle, rulesList, promptText, completionTitle, completionMessage, videoLink, watchButton;
 
         let modules = [];
         let selectedModules = [];
@@ -237,14 +292,22 @@
         let chineseName = '';
         let englishName = '';
         let language = 'zh'; // Default language
-        let isLoadingComplete = false; // 标记加载是否完成
-        let loadedModulesCount = 0; // 已加载的模块数量
+        let isLoadingComplete = false;
+        let loadedModulesCount = 0;
 
         const MODULE_COUNT = 101;
         const SELECTED_MODULE_COUNT = 30;
         const FRAME_INTERVAL = 20;
-        const BASE_URL = 'https://pub-157150daba934ac3a4a79a4320fe036b.r2.dev/'; // Using Cloudflare R2
+        const BASE_URL = 'https://pub-157150daba934ac3a4a79a4320fe036b.r2.dev/';
         const GOOGLE_FORM_URL = 'https://docs.google.com/forms/u/0/d/e/1FAIpQLSfusBxX1cNbsastoKk1CwRMNt6lNvZ2290zl2XQe0zBWP1wQQ/formResponse';
+        const VIDEO_URLS = {
+            en: 'https://www.bilibili.com/video/BV1ZvEjzMEaY/?vd_source=11e61e0995cba4205ba764742292d687',
+            zh: 'https://www.bilibili.com/video/BV1ZYEjzzEio/?vd_source=11e61e0995cba4205ba764742292d687'
+        };
+        const VIDEO_LINK_TEXT = {
+            en: 'Click to Watch the Rules Video',
+            zh: '点击观看规则视频'
+        };
 
         const translations = {
             zh: {
@@ -314,6 +377,7 @@
             chineseNameInput = document.getElementById('chineseNameInput');
             englishNameInput = document.getElementById('englishNameInput');
             welcomePage = document.getElementById('welcomePage');
+            videoPage = document.getElementById('videoPage');
             mainPage = document.getElementById('mainPage');
             completionPage = document.getElementById('completionPage');
             frameDisplay = document.getElementById('frameDisplay');
@@ -325,6 +389,8 @@
             promptText = document.getElementById('promptText');
             completionTitle = document.getElementById('completionTitle');
             completionMessage = document.getElementById('completionMessage');
+            videoLink = document.getElementById('videoLink');
+            watchButton = document.getElementById('watchButton');
         }
 
         function updateMainPageContent() {
@@ -506,8 +572,8 @@
                 formData.append('entry.690842731', data.email); // Email
                 formData.append('entry.5521573744', data.videoTime); // Video Time
                 formData.append('entry.540771953', data.userInput); // User Input
-                formData.append('entry.1784624963', data.chineseName); // Chinese Name (Placeholder ID)
-                formData.append('entry.869351757', data.englishName); // English Name (Placeholder ID)
+                formData.append('entry.1784624963', data.chineseName); // Chinese Name
+                formData.append('entry.869351757', data.englishName); // English Name
 
                 const response = await fetch(GOOGLE_FORM_URL, {
                     method: 'POST',
@@ -604,19 +670,39 @@
                 console.log('User email:', userEmail, 'Chinese name:', chineseName, 'English name:', englishName, 'Selected language:', language);
 
                 welcomePage.style.display = 'none';
-                mainPage.style.display = 'block';
-                updateMainPageContent();
-                showNextFrame();
+                videoPage.style.display = 'flex';
+                videoLink.href = VIDEO_URLS[language];
+                videoLink.textContent = VIDEO_LINK_TEXT[language]; // Set link text based on language
+                watchButton.disabled = true;
+                console.log('Video link set to:', VIDEO_URLS[language]);
+                // Simulate video watching with a timer (adjust duration to match video length, e.g., 30 seconds)
+                setTimeout(() => {
+                    watchButton.disabled = false;
+                    console.log('Video presumed watched, enabling button');
+                }, 30000); // 30 seconds as a placeholder; adjust based on video duration
             } catch (error) {
                 console.error('Error in startExperiment:', error);
                 alert('发生错误，请检查控制台日志并联系支持团队：sguoau@connect.ust.hk');
             }
         }
 
+        function proceedToMainPage() {
+            if (!watchButton.disabled) {
+                videoPage.style.display = 'none';
+                mainPage.style.display = 'block';
+                updateMainPageContent();
+                showNextFrame();
+                preloadFrames(); // Ensure frames start loading
+            } else {
+                alert('请观看视频至结束后再点击确认。/ Please watch the video until the end before proceeding.');
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             initializeDOMElements();
-            preloadFrames();
+            preloadFrames(); // Start preloading in the background
         });
     </script>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93e8e2b7dd3c458f',t:'MTc0NzA0MjEwMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
