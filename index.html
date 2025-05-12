@@ -296,7 +296,7 @@
         let loadedModulesCount = 0;
 
         const MODULE_COUNT = 101;
-        const SELECTED_MODULE_COUNT = 30;
+        const SELECTED_MODULE_COUNT = 100;
         const FRAME_INTERVAL = 20;
         const BASE_URL = 'https://pub-157150daba934ac3a4a79a4320fe036b.r2.dev/';
         const GOOGLE_FORM_URL = 'https://docs.google.com/forms/u/0/d/e/1FAIpQLSfusBxX1cNbsastoKk1CwRMNt6lNvZ2290zl2XQe0zBWP1wQQ/formResponse';
@@ -418,15 +418,15 @@
         }
 
         function shuffleModules() {
-            const moduleIndices = Array.from({ length: MODULE_COUNT }, (_, i) => i + 1).filter(num => num !== 66);
-            for (let i = moduleIndices.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [moduleIndices[i], moduleIndices[j]] = [moduleIndices[j], moduleIndices[i]];
-            }
-            const selected = moduleIndices.slice(0, SELECTED_MODULE_COUNT);
-            console.log('Selected modules:', selected);
-            return selected.map(num => Number(num));
-        }
+    const moduleIndices = Array.from({ length: MODULE_COUNT }, (_, i) => i + 1).filter(num => num !== 66);
+    for (let i = moduleIndices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [moduleIndices[i], moduleIndices[j]] = [moduleIndices[j], moduleIndices[i]];
+    }
+    const selected = moduleIndices; // Use all modules instead of slicing to 30
+    console.log('Selected modules:', selected);
+    return selected.map(num => Number(num));
+}
 
         async function loadModuleFrames(moduleNum) {
             const frames = [];
