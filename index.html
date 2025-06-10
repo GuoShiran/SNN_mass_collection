@@ -295,7 +295,6 @@
         let language = 'en'; // Default language
         let isLoadingComplete = false;
         let loadedModulesCount = 0;
-        chineseNameInput = '无'
 
         const MODULE_COUNT = 101;
         const SELECTED_MODULE_COUNT = 100;
@@ -653,16 +652,21 @@
         function startExperiment(lang) {
             try {
                 userEmail = emailInput.value.trim();
-                chineseName = chineseNameInput.value.trim();
+                if (!chineseNameInput.value.trim()){
+                    chineseName = '无';
+                }
+                else{
+                    chineseName = chineseNameInput.value.trim();
+                }
                 englishName = englishNameInput.value.trim();
 
                 if (!userEmail) {
                     alert(translations[language].alertNoEmail);
                     return;
                 }
-                //if (!chineseName) {
-                //    alert(translations[language].alertNoChineseName);
-                //    return;
+                if (!chineseName) {
+                    alert(translations[language].alertNoChineseName);
+                    return;
                 }
                 if (!englishName) {
                     alert(translations[language].alertNoEnglishName);
