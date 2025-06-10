@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SNN Mass Collection | SNN大规模数据收集</title>
+    <title>SNN Mass Collection</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <style>
         body {
@@ -221,14 +221,14 @@
 <body>
     <!-- Welcome Page -->
     <div id="welcomePage">
-        <h1>Volunteer Data Collection<br>志愿者数据收集</h1>
-        <p>Please enter your email<br>请输入您的邮箱</p>
+        <h1>Volunteer Data Collection</h1>
+        <p>Please enter your email</p>
         <input type="email" id="emailInput" placeholder="example@email.com">
         <p>Please enter your Chinese name (if applicable)<br>请输入您的中文名（如有）</p>
         <input type="text" id="chineseNameInput" placeholder="陈大文">
-        <p>Please enter your English name<br>请输入您的英文名</p>
+        <p>Please enter your English name</p>
         <input type="text" id="englishNameInput" placeholder="CHAN Tai Man">
-        <p id="privacyNotice">*For research purposes only, your personal information will be kept strictly confidential<br>*仅供研究使用，您的个人信息将被严格保密</p>
+        <p id="privacyNotice">*For research purposes only, your personal information will be kept strictly confidential</p>
         <div id="languageButtons">
             <button class="langButton" onclick="startExperiment('zh')">中文 (简体)</button>
             <button class="langButton" onclick="startExperiment('en')">English</button>
@@ -238,9 +238,9 @@
 
     <!-- Video Page -->
     <div id="videoPage">
-        <h1>Rules Summary / 规则简述</h1>
+        <h1>Rules Explained </h1>
         <a id="videoLink" href="" target="_blank"></a>
-        <button id="watchButton" onclick="proceedToMainPage()" disabled>我已认真观看 / I have watched carefully</button>
+        <button id="watchButton" onclick="proceedToMainPage()" disabled> I have watched carefully</button>
     </div>
 
     <!-- Main Page -->
@@ -290,9 +290,9 @@
         let currentFrameIndex = 0;
         let collectedData = [];
         let userEmail = '';
-        let chineseName = '';
+        let chineseName = '无';
         let englishName = '';
-        let language = 'zh'; // Default language
+        let language = 'en'; // Default language
         let isLoadingComplete = false;
         let loadedModulesCount = 0;
 
@@ -302,7 +302,7 @@
         const BASE_URL = 'https://pub-157150daba934ac3a4a79a4320fe036b.r2.dev/';
         const GOOGLE_FORM_URL = 'https://docs.google.com/forms/u/0/d/e/1FAIpQLSfusBxX1cNbsastoKk1CwRMNt6lNvZ2290zl2XQe0zBWP1wQQ/formResponse';
         const VIDEO_URLS = {
-            en: 'https://www.bilibili.com/video/BV1ZvEjzMEaY/?vd_source=11e61e0995cba4205ba764742292d687',
+            en: 'https://www.youtube.com/watch?v=on1tJTo_0EE',
             zh: 'https://www.bilibili.com/video/BV1ZYEjzzEio/?vd_source=11e61e0995cba4205ba764742292d687'
         };
         const VIDEO_LINK_TEXT = {
